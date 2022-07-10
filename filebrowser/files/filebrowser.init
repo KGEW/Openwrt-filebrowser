@@ -4,41 +4,32 @@
 START=90
 STOP=10
 
-addr_type="$(uci get filebrowser.config.addr_type)"
-db_dir="$(uci get filebrowser.config.db_dir)"
-[ "${db_dir}" == "/" ] || db_dir="${db_dir%*/}"
-db_name="$(uci get filebrowser.config.db_name| sed 's#/##g')"
-enabled="$(uci get filebrowser.config.enabled)"
-port="$(uci get filebrowser.config.port)"
-root_dir="$(uci get filebrowser.config.root_dir)"
-
-if [ "${addr_type}" == "local" ];then
-	addr="127.0.0.1"
-elif [ "${addr_type}" == "lan" ];then
-	addr="$(uci get network.lan.ipaddr)"
-elif [ "${addr_type}" == "wan" ];then
-	addr="0.0.0.0"
-fi
+FILEBROWSER="/usr/bin/filebrowser"
 
 start() {
-	echo luci for filebrowser
-        local vt_enabled=`uci get filebrowser.config.enabled 2>/dev/null`
-	echo filebrowser status is $vt_enabled 
-	if [ "$vt_enabled" = 1 ]; then
-		logger -t alex restarting filebrowser
-        sleep 1s
-		mkdir -p "${root_dir}"
+	    local enabled="$(uci get filebrowser.config.enabled)"
+	    local addr_type="$(uci get filebrowser.config.addr_type)"
+	    local db_dir="$(uci get filebrowser.config.db_dir)"
+	    [ "${db_dir}" == "/" ] || db_dir="${db_dir%*/}"
+	    local db_name="$(uci get filebrowser.config.db_name| sed 's#/##g')"
+	    local port="$(uci get filebrowser.config.port)"
+	    local root_dir="$(uci get filebrowser.config.root_dir)"
+	    if [ "${addr_type}" == "local" ];then
+		    addr="127.0.0.1"
+	    elif [ "${addr_type}" == "lan" ];then
+		    addr="$(uci get network.lan.ipaddr)"
+	    elif [ "${addr_type}" == "wan" ];then
+		    addr="0.0.0.0"
+	    fi
+	    stop
+	    [ "${enabled}" == "1" ] || exit 0
+	    mkdir -p "${root_dir}"
 	    mkdir -p "${db_dir}"
-	    filebrowser -a "${addr}" -d "${db_dir}/${db_name}" -p "${port}" -r "${root_dir}" >/dev/null 2>&1 &
-	else	
-		logger -t alex stopping filebrowser
-        sleep 1s
-		/etc/init.d/filebrowser stop
-	fi
+	    export HOME="/root/"
+	    "${FILEBROWSER}" -a "${addr}" -d "${db_dir}/${db_name}" -p "${port}" -r "${root_dir}" >/dev/null 2>&1 &
 }
 
 stop() {
 	echo "${db_dir}/${db_name}" > "/lib/upgrade/keep.d/filebrowser"
-	killall -9 filebrowser >/dev/null 2>&1
+	killall -9 pgrep "${FILEBROWSER}" >/dev/null 2>&1
 }
-
