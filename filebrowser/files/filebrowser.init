@@ -21,14 +21,24 @@ elif [ "${addr_type}" == "wan" ];then
 fi
 
 start() {
-	stop
-	[ "$enabled" == "1" ] || exit 0
-	mkdir -p "${root_dir}"
-	mkdir -p "${db_dir}"
-	filebrowser -a "${addr}" -d "${db_dir}/${db_name}" -p "${port}" -r "${root_dir}" >/dev/null 2>&1 &
+	echo luci for filebrowser
+        local vt_enabled=`uci get filebrowser.config.enabled 2>/dev/null`
+	echo filebrowser status is $vt_enabled 
+	if [ "$vt_enabled" = 1 ]; then
+		logger -t alex restarting filebrowser
+        sleep 1s
+		mkdir -p "${root_dir}"
+	    mkdir -p "${db_dir}"
+	    filebrowser -a "${addr}" -d "${db_dir}/${db_name}" -p "${port}" -r "${root_dir}" >/dev/null 2>&1 &
+	else	
+		logger -t alex stopping filebrowser
+        sleep 1s
+		/etc/init.d/filebrowser stop
+	fi
 }
 
 stop() {
 	echo "${db_dir}/${db_name}" > "/lib/upgrade/keep.d/filebrowser"
 	killall -9 filebrowser >/dev/null 2>&1
 }
+
