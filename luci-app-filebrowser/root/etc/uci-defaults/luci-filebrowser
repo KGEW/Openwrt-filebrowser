@@ -3,7 +3,7 @@
 uci -q batch <<-EOF >/dev/null
 	delete ucitrack.@filebrowser[-1]
 	add ucitrack filebrowser
-	set ucitrack.@filebrowser[-1].init=filebrowser
+	set ucitrack.@filebrowser[-1].exec='/etc/init.d/filebrowser start'
 	commit ucitrack
 EOF
 
